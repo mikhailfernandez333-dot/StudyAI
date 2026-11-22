@@ -1,5 +1,6 @@
 
 class AuthValidators {
+  // Validación del registro
   static String? validarRegistro({
     required String nombre,
     required String correo,
@@ -17,6 +18,18 @@ class AuthValidators {
 
     if (password.length < 6) {
       return 'La contraseña debe tener al menos 6 caracteres.';
+    }
+
+    return null;
+  }
+
+  // Validación del inicio de sesión
+  static String? validarLogin({
+    required String correo,
+    required String password,
+  }) {
+    if (correo.trim().isEmpty || password.isEmpty) {
+      return 'Completa todos los campos.';
     }
 
     return null;
