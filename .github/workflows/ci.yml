@@ -11,7 +11,7 @@ on:
 
 jobs:
   pruebas:
-    name: Analizar y ejecutar pruebas
+    name: Analizar, probar y verificar calidad
     runs-on: ubuntu-latest
 
     steps:
@@ -36,5 +36,29 @@ jobs:
       - name: Analizar codigo
         run: flutter analyze
 
-      - name: Ejecutar pruebas automatizadas
-        run: flutter test
+      - name: Ejecutar pruebas automatizadas con cobertura
+        run: flutter test --coverage
+
+      - name: Verificar Quality Gate de cobertura
+        shell: bash
+        run: |
+          TOTAL=$(grep -c '^DA:' coverage/lcov.info)
+          CUBIERTAS=$(grep '^DA:' coverage/lcov.info | awk -F'[:,]' '$3 > 0 {count++} END {print count+0}')
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "Error: no se encontraron datos de cobertura."
+            exit 1
+          fi
+
+          COBERTURA=$((CUBIERTAS * 100 / TOTAL))
+
+          echo "Lineas encontradas: $TOTAL"
+          echo "Lineas cubiertas: $CUBIERTAS"
+          echo "Cobertura: $COBERTURA%"
+
+          if [ "$COBERTURA" -lt 80 ]; then
+            echo "Quality Gate rechazado: cobertura inferior al 80%."
+            exit 1
+          fi
+
+          echo "Quality Gate aprobado."
