@@ -42,23 +42,43 @@ jobs:
       - name: Verificar Quality Gate de cobertura
         shell: bash
         run: |
-          TOTAL=$(grep -c '^DA:' coverage/lcov.info)
-          CUBIERTAS=$(grep '^DA:' coverage/lcov.info | awk -F'[:,]' '$3 > 0 {count++} END {print count+0}')
-
-          if [ "$TOTAL" -eq 0 ]; then
-            echo "Error: no se encontraron datos de cobertura."
+          if [ ! -f coverage/lcov.info ]; then
+            echo "::error::No se encontro el archivo de cobertura."
             exit 1
           fi
 
-          COBERTURA=$((CUBIERTAS * 100 / TOTAL))
+          RESULT=$(awk -F'[:,]' '
+            /^DA:/ {
+              total++
+              if ($3 > 0) {
+                cubiertas++
+              }
+            }
+            END {
+              if (total == 0) {
+                print "0 0 0"
+              } else {
+                porcentaje = int((cubiertas / total) * 100)
+                printf "%d %d %d\n", total, cubiertas, porcentaje
+              }
+            }
+          ' coverage/lcov.info)
+
+          read -r TOTAL CUBIERTAS COBERTURA <<< "$RESULT"
 
           echo "Lineas encontradas: $TOTAL"
           echo "Lineas cubiertas: $CUBIERTAS"
           echo "Cobertura: $COBERTURA%"
 
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "::error::No se encontraron lineas para medir."
+            exit 1
+          fi
+
           if [ "$COBERTURA" -lt 80 ]; then
-            echo "Quality Gate rechazado: cobertura inferior al 80%."
+            echo "::error::Quality Gate rechazado: cobertura inferior al 80%."
             exit 1
           fi
 
           echo "Quality Gate aprobado."
+          echo "Cobertura superior al minimo requerido del 80%."
