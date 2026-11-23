@@ -76,7 +76,7 @@ void main() {
       );
 
       // Assert
-      expect(resultado, isNotNull);
+      expect(resultado, isNull);
     });
 
     test('5. Debe rechazar un nombre vacío', () {
